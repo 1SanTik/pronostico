@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pronósticos de Ventas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 3px solid #3498db; margin-bottom: 30px; padding-bottom: 10px; }
+        .form-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+        .card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card h3 { color: #2c3e50; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .resumen { margin: 15px 0; font-size: 0.95em; }
+        .valor-pronostico { color: #27ae60; font-weight: bold; font-size: 1.2em; }
+        .valor-error { color: #e74c3c; font-weight: bold; }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #2980b9; }
+        input[type="file"] { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📈 Sistema de Pronóstico en Tiempo Real</h1>
+    </div>
+
+    <div class="form-section">
+        <form method="POST" enctype="multipart/form-data">
+            <p><strong>1. Seleccione su archivo de ventas (CSV):</strong></p>
+            <input type="file" name="archivo_csv" accept=".csv" required>
+            
+            <p><strong>2. Ajuste el valor de N (Meses para el promedio):</strong></p>
+            <input type="number" name="n_ventana" value="{{ n }}" min="1" max="12" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 20px;">
+            <br>
+            <button type="submit">Ejecutar Análisis y Gráficos</button>
+        </form>
+    </div>
+
+    {% if datos %}
+    <div class="grid-cards">
+        {% for nombre_prod, info in datos.items() %}
+        <div class="card">
+            <h3>{{ nombre_prod | upper }}</h3>
+            <div class="resumen">
+                <p>Próximo Valor Estimado: <span class="valor-pronostico">{{ info.futuro }}</span></p>
+                <p>Error MAPE: <span class="valor-error">{{ info.mape }}%</span></p>
+                <p>Error RMSE: <strong>{{ info.rmse }}</strong></p>
+            </div>
+            
+            <canvas id="canvas-{{ loop.index }}" width="400" height="250"></canvas>
+            
+            <script>
+                (function() {
+                    var ctx = document.getElementById('canvas-{{ loop.index }}').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: {{ info.etiquetas | default(range(1, (info.historico | length) + 1) | list) | tojson }},
+                            datasets: [{
+                                label: 'Ventas Históricas',
+                                data: {{ info.historico | tojson }},
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: false }
+                            }
+                        }
+                    });
+                })();
+            </script>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

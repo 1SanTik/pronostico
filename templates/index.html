@@ -6,84 +6,335 @@
     <title>Pronósticos de Ventas</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 3px solid #3498db; margin-bottom: 30px; padding-bottom: 10px; }
-        .form-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd; }
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
-        .card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .card h3 { color: #2c3e50; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .resumen { margin: 15px 0; font-size: 0.95em; }
-        .valor-pronostico { color: #27ae60; font-weight: bold; font-size: 1.2em; }
-        .valor-error { color: #e74c3c; font-weight: bold; }
-        button { background-color: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #2980b9; }
-        input[type="file"] { margin-bottom: 15px; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f3;
+            margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 1200px; margin: auto; background: #fff;
+            padding: 30px; border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            margin-bottom: 30px; padding-bottom: 10px;
+        }
+        .header h1 { margin: 0; color: #2c3e50; }
+        .header p  { color: #7f8c8d; margin: 6px 0 0; }
+
+        /* ── FORMULARIO ── */
+        .form-section {
+            background: #f4f8fb; padding: 24px;
+            border-radius: 10px; margin-bottom: 30px;
+            border: 1px solid #d6e4f0;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-weight: 600; color: #34495e; font-size: 0.9em; }
+        .form-group input,
+        .form-group select {
+            padding: 9px 12px; border-radius: 6px;
+            border: 1px solid #ccc; font-size: 0.95em;
+            background: #fff;
+        }
+        .form-group input:focus,
+        .form-group select:focus { outline: none; border-color: #3498db; }
+        .btn-submit {
+            margin-top: 20px;
+            background-color: #2980b9; color: white;
+            border: none; padding: 12px 30px;
+            border-radius: 8px; cursor: pointer;
+            font-size: 1em; font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover { background-color: #1a6fa3; }
+
+        /* ── BADGE MÉTODO ── */
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 0.8em;
+            font-weight: 600; color: white; margin-left: 8px;
+            vertical-align: middle;
+        }
+        .badge-pm  { background: #3498db; }
+        .badge-ses { background: #8e44ad; }
+        .badge-pro { background: #e67e22; }
+
+        /* ── CARDS ── */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 28px;
+        }
+        .card {
+            background: white; border: 1px solid #e8e8e8;
+            border-radius: 12px; padding: 22px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .card h3 {
+            color: #2c3e50; margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px; font-size: 1.1em;
+        }
+
+        /* ── MÉTRICAS ── */
+        .metricas-row {
+            display: flex; gap: 12px; flex-wrap: wrap;
+            margin: 14px 0;
+        }
+        .metrica-box {
+            flex: 1; min-width: 90px;
+            background: #f9f9f9; border-radius: 8px;
+            padding: 10px 14px; text-align: center;
+            border: 1px solid #eee;
+        }
+        .metrica-box .valor { font-size: 1.25em; font-weight: 700; }
+        .metrica-box .etiq  { font-size: 0.75em; color: #888; margin-top: 2px; }
+        .color-verde  { color: #27ae60; }
+        .color-rojo   { color: #e74c3c; }
+        .color-azul   { color: #2980b9; }
+
+        /* ── TABLA COMPARATIVA ── */
+        .tabla-comp { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.88em; }
+        .tabla-comp th {
+            background: #2c3e50; color: white;
+            padding: 8px 10px; text-align: left;
+        }
+        .tabla-comp td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+        .tabla-comp tr:last-child td { border-bottom: none; }
+        .tabla-comp tr.mejor td { background: #eafaf1; font-weight: 600; }
+        .tabla-comp tr.mejor td:first-child::after {
+            content: ' ✓'; color: #27ae60;
+        }
+        .tabla-comp tr:hover td { background: #f5f5f5; }
+
+        /* ── CANVAS ── */
+        canvas { margin-top: 16px; }
+
+        /* ── SECCIÓN RESULTADOS ── */
+        .section-title {
+            font-size: 1.3em; font-weight: 700; color: #2c3e50;
+            margin: 0 0 20px; padding-bottom: 8px;
+            border-bottom: 2px solid #ecf0f1;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+
+    <!-- ENCABEZADO -->
     <div class="header">
-        <h1>📈 Sistema de Pronóstico en Tiempo Real</h1>
+        <h1>📈 Sistema de Pronóstico de Ventas</h1>
+        <p>Modelos: Promedio Móvil · Suavización Exponencial Simple · Prophet</p>
     </div>
 
+    <!-- FORMULARIO -->
     <div class="form-section">
         <form method="POST" enctype="multipart/form-data">
-            <p><strong>1. Seleccione su archivo de ventas (CSV):</strong></p>
-            <input type="file" name="archivo_csv" accept=".csv" required>
-            
-            <p><strong>2. Ajuste el valor de N (Meses para el promedio):</strong></p>
-            <input type="number" name="n_ventana" value="{{ n }}" min="1" max="12" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 20px;">
-            <br>
-            <button type="submit">Ejecutar Análisis y Gráficos</button>
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>📂 Archivo de ventas (CSV, sep= ; )</label>
+                    <input type="file" name="archivo_csv" accept=".csv" required>
+                </div>
+
+                <div class="form-group">
+                    <label>🔧 Modelo de pronóstico</label>
+                    <select name="metodo">
+                        <option value="promedio_movil" {% if metodo == 'promedio_movil' %}selected{% endif %}>
+                            Promedio Móvil
+                        </option>
+                        <option value="ses" {% if metodo == 'ses' %}selected{% endif %}>
+                            Suavización Exponencial Simple (SES)
+                        </option>
+                        <option value="prophet" {% if metodo == 'prophet' %}selected{% endif %}>
+                            Prophet (Meta)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📅 Frecuencia de los datos
+                        <span style="font-weight:400; color:#7f8c8d;">
+                            (¿cada cuánto tiempo tiene un registro? Ej: si cada fila es un mes → Mensual)
+                        </span>
+                    </label>
+                    <select name="frecuencia">
+                        <option value="MS"  {% if frecuencia == 'MS'  %}selected{% endif %}>Mensual — cada fila es 1 mes</option>
+                        <option value="W"   {% if frecuencia == 'W'   %}selected{% endif %}>Semanal — cada fila es 1 semana</option>
+                        <option value="D"   {% if frecuencia == 'D'   %}selected{% endif %}>Diario — cada fila es 1 día</option>
+                        <option value="QS"  {% if frecuencia == 'QS'  %}selected{% endif %}>Trimestral — cada fila es 1 trimestre</option>
+                        <option value="AS"  {% if frecuencia == 'AS'  %}selected{% endif %}>Anual — cada fila es 1 año</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🔮 Períodos a proyectar
+                        <span style="font-weight:400; color:#7f8c8d;">
+                            (¿cuántos períodos hacia adelante quieres ver?)
+                        </span>
+                    </label>
+                    <input type="number" name="pasos" value="{{ pasos }}" min="1" max="12"
+                           placeholder="Ej: 6">
+                </div>
+
+                <div class="form-group">
+                    <label>🔢 N (ventana Promedio Móvil)</label>
+                    <input type="number" name="n_ventana" value="{{ n }}" min="1" max="24">
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn-submit">▶ Ejecutar Análisis</button>
         </form>
     </div>
 
+    <!-- RESULTADOS -->
     {% if datos %}
+    <p class="section-title">
+        Resultados —
+        {% if metodo == 'promedio_movil' %}
+            <span class="badge badge-pm">Promedio Móvil (N={{ n }})</span>
+        {% elif metodo == 'ses' %}
+            <span class="badge badge-ses">Suavización Exponencial Simple</span>
+        {% else %}
+            <span class="badge badge-pro">Prophet (Meta)</span>
+        {% endif %}
+    </p>
+
     <div class="grid-cards">
         {% for nombre_prod, info in datos.items() %}
         <div class="card">
+
+            <!-- Título producto -->
             <h3>{{ nombre_prod | upper }}</h3>
-            <div class="resumen">
-                <p>Próximo Valor Estimado: <span class="valor-pronostico">{{ info.futuro }}</span></p>
-                <p>Error MAPE: <span class="valor-error">{{ info.mape }}%</span></p>
-                <p>Error RMSE: <strong>{{ info.rmse }}</strong></p>
+
+            <!-- Métricas principales -->
+            <div class="metricas-row">
+                <div class="metrica-box">
+                    <div class="valor color-verde">{{ info.proyecciones[0] }}</div>
+                    <div class="etiq">Próximo valor</div>
+                </div>
+                <div class="metrica-box">
+                    <div class="valor color-rojo">{{ info.mape }}%</div>
+                    <div class="etiq">MAPE</div>
+                </div>
+                <div class="metrica-box">
+                    <div class="valor color-azul">{{ info.rmse }}</div>
+                    <div class="etiq">RMSE</div>
+                </div>
+                {% if info.alpha != '-' %}
+                <div class="metrica-box">
+                    <div class="valor" style="color:#8e44ad;">{{ info.alpha }}</div>
+                    <div class="etiq">Alpha (α)</div>
+                </div>
+                {% endif %}
             </div>
-            
-            <canvas id="canvas-{{ loop.index }}" width="400" height="250"></canvas>
-            
+
+            <!-- Gráfico histórico + proyección -->
+            <canvas id="canvas-{{ loop.index }}" height="220"></canvas>
+
+            <!-- Tabla comparativa de los 3 modelos -->
+            <p style="margin: 18px 0 6px; font-weight:600; font-size:0.9em; color:#555;">
+                📊 Comparativa de modelos
+            </p>
+            <table class="tabla-comp">
+                <thead>
+                    <tr>
+                        <th>Modelo</th>
+                        <th>MAPE (%)</th>
+                        <th>RMSE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set mejor_mape = info.comp.values() | map(attribute='mape') | min %}
+                    {% for modelo_nombre, metricas in info.comp.items() %}
+                    <tr {% if metricas.mape == mejor_mape %}class="mejor"{% endif %}>
+                        <td>{{ modelo_nombre }}</td>
+                        <td>{{ metricas.mape }}%</td>
+                        <td>{{ metricas.rmse }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Script Chart.js -->
             <script>
-                (function() {
-                    var ctx = document.getElementById('canvas-{{ loop.index }}').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: {{ info.etiquetas | default(range(1, (info.historico | length) + 1) | list) | tojson }},
-                            datasets: [{
-                                label: 'Ventas Históricas',
-                                data: {{ info.historico | tojson }},
+            (function() {
+                var ctx = document.getElementById('canvas-{{ loop.index }}').getContext('2d');
+                var historico   = {{ info.historico   | tojson }};
+                var proyecc     = {{ info.proyecciones | tojson }};
+                var labelsHist  = {{ info.etiquetas    | tojson }};
+                var labelsFut   = {{ info.etiquetas_fut| tojson }};
+
+                var labelsTotal = labelsHist.concat(labelsFut);
+
+                // Datos históricos + null para la parte futura
+                var dataHist = historico.concat(new Array(proyecc.length).fill(null));
+                // null para histórico + proyecciones
+                var dataFut  = new Array(historico.length - 1).fill(null).concat([historico[historico.length-1]]).concat(proyecc);
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labelsTotal,
+                        datasets: [
+                            {
+                                label: 'Histórico',
+                                data: dataHist,
                                 borderColor: '#3498db',
-                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                backgroundColor: 'rgba(52,152,219,0.08)',
                                 borderWidth: 2,
                                 fill: true,
-                                tension: 0.3
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: { beginAtZero: false }
+                                tension: 0.3,
+                                pointRadius: 3
+                            },
+                            {
+                                label: 'Proyección',
+                                data: dataFut,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231,76,60,0.06)',
+                                borderWidth: 2,
+                                borderDash: [6, 3],
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointStyle: 'rectRot'
                             }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 11 } } },
+                            tooltip: { callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.raw === null) return null;
+                                    return ctx.dataset.label + ': ' + ctx.raw;
+                                }
+                            }}
+                        },
+                        scales: {
+                            y: { beginAtZero: false }
                         }
-                    });
-                })();
+                    }
+                });
+            })();
             </script>
         </div>
         {% endfor %}
     </div>
     {% endif %}
-</div>
 
+</div>
 </body>
 </html>
